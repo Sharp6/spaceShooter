@@ -63,7 +63,8 @@ windowHeight = 480
 
 pygame.init()
 pygame.font.init()
-surface = pygame.display.set_mode((windowWidth,windowHeight), pygame.FULLSCREEN)
+# surface = pygame.display.set_mode((windowWidth,windowHeight), pygame.FULLSCREEN)
+surface = pygame.display.set_mode((windowWidth,windowHeight))
 
 pygame.display.set_caption('Alien\'s Are Gonna Kill Me!')
 textFont = pygame.font.SysFont("monospace", 50)
