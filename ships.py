@@ -23,7 +23,8 @@ class Player():
 		self.surface.blit(self.image, (self.x, self.y))
 
 	def setPosition(self, pos):
-		self.x = pos[0] - self.width / 2
+		# self.x = pos[0] - self.width / 2
+		self.x = pos - self.width / 2
 		# self.y = pos[1]
 
 	def fire(self):
