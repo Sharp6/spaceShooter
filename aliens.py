@@ -5,7 +5,67 @@ import pygame.time as GAME_TIME
 import ships
 
 import RPi.GPIO as GPIO
+GPIO.cleanup()
 GPIO.setmode(GPIO.BCM)
+
+SPICLK = 11
+SPIMISO = 9
+SPIMOSI = 10
+SPICS = 8
+
+BUTTON = 7
+# set up the SPI interface pins
+GPIO.setup(SPIMOSI, GPIO.OUT)
+GPIO.setup(SPIMISO, GPIO.IN)
+GPIO.setup(SPICLK, GPIO.OUT)
+GPIO.setup(SPICS, GPIO.OUT)
+
+GPIO.setup(BUTTON, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+# 10k trim pot connected to adc #0
+potentiometer_adc = 0
+# END POT INSERT
+
+
+windowWidth = 800
+windowHeight = 480
+
+pygame.init()
+pygame.font.init()
+surface = pygame.display.set_mode((windowWidth,windowHeight), pygame.FULLSCREEN)
+#surface = pygame.display.set_mode((windowWidth,windowHeight))
+
+pygame.display.set_caption('Alien\'s Are Gonna Kill Me!')
+textFont = pygame.font.SysFont("monospace", 50)
+
+gameStarted = False
+gameStartedTime = 0
+gameFinishedTime = 0
+gameOver = False
+
+# Mouse variables
+mousePosition = (0,0)
+mouseStates = None
+mouseDown = False
+
+# Image variables
+startScreen = pygame.image.load("assets/start_screen.png")
+background = pygame.image.load("assets/background.png")
+
+# Ships
+ship = ships.Player(windowWidth / 2, windowHeight, pygame, surface)
+#def fireButtonHandler(channel):
+#	ship.fire()
+#GPIO.add_event_detect(BUTTON, GPIO.FALLING, callback=fireButtonHandler)
+
+enemyShips = []
+
+lastEnemyCreated = 0
+enemyInterval = random.randint(1000, 2500)
+
+# Sound setup
+pygame.mixer.init()
+
 
 # read SPI data from MCP3008 chip, 8 possible adc's (0 thru 7)
 def readadc(adcnum, clockpin, mosipin, misopin, cspin):
@@ -43,58 +103,11 @@ def readadc(adcnum, clockpin, mosipin, misopin, cspin):
 	adcout >>= 1       # first bit is 'null' so drop it
 	return adcout
 
-SPICLK = 11
-SPIMISO = 9
-SPIMOSI = 10
-SPICS = 8
-# set up the SPI interface pins
-GPIO.setup(SPIMOSI, GPIO.OUT)
-GPIO.setup(SPIMISO, GPIO.IN)
-GPIO.setup(SPICLK, GPIO.OUT)
-GPIO.setup(SPICS, GPIO.OUT)
-
-# 10k trim pot connected to adc #0
-potentiometer_adc = 0;
-# END POT INSERT
-
-
-windowWidth = 800
-windowHeight = 480
-
-pygame.init()
-pygame.font.init()
-# surface = pygame.display.set_mode((windowWidth,windowHeight), pygame.FULLSCREEN)
-surface = pygame.display.set_mode((windowWidth,windowHeight))
-
-pygame.display.set_caption('Alien\'s Are Gonna Kill Me!')
-textFont = pygame.font.SysFont("monospace", 50)
-
-gameStarted = False
-gameStartedTime = 0
-gameFinishedTime = 0
-gameOver = False
-
-# Mouse variables
-mousePosition = (0,0)
-mouseStates = None
-mouseDown = False
-
-# Image variables
-startScreen = pygame.image.load("assets/start_screen.png")
-background = pygame.image.load("assets/background.png")
-
-# Ships
-ship = ships.Player(windowWidth / 2, windowHeight, pygame, surface)
-enemyShips = []
-
-lastEnemyCreated = 0
-enemyInterval = random.randint(1000, 2500)
-
-# Sound setup
-pygame.mixer.init()
-
 def updateGame():
 	global mouseDown, gameOver
+
+	if GPIO.input(BUTTON) == False:
+		ship.fire()
 
 	if mouseStates[0] is 1 and mouseDown is False:
 		ship.fire()
@@ -149,7 +162,7 @@ while True:
 	mousePosition = pygame.mouse.get_pos()
 	mouseStates = pygame.mouse.get_pressed()
 	trim_pot = readadc(potentiometer_adc, SPICLK, SPIMOSI, SPIMISO, SPICS)
-	pot_position = trim_pot * (windowWidth / 1024)
+	pot_position = trim_pot * windowWidth / 1023.0
 
 	if gameStarted is True and gameOver is False:
 		updateGame()
